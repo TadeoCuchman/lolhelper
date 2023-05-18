@@ -1,14 +1,31 @@
 import { useState, useEffect } from 'react'
+import ChampList from './Components/ChampList'
+import ChampPicker from './Components/ChampPicker'
 import champsApi from './assets/champs.json'
+import Logo from './Components/Logo'
+import Loader from './Components/Loader'
 import './App.css'
 
 const App = () => {
   const [prompt, setPrompt] = useState('')
   const [send, setSend] = useState('')
   const [champs, setChamps] = useState({...champsApi.data})
+  const [allChampsNames, setAllChampsNames] = useState('')
+  const [filteredChamps, setFilteredChamps] = useState({...champsApi.data})
+  const [line1, setLine1] = useState('')
+  const [line2, setLine2] = useState('')
+  const [response, setResponse] = useState([])
+  const [loader, setLoader] = useState(false)
+ 
 
   useEffect(() => {
-    console.log(champsApi.data)
+    let namesArray = [];
+    for(let champ in champsApi.data) {
+      // console.log(champ)
+      namesArray.push(champ)
+
+    }
+    setAllChampsNames(namesArray)
   }, [])
 
 
@@ -41,13 +58,17 @@ const App = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: "do something"
+          message: `${line1} against ${line2}`
         })
       }
       const response = await fetch('http://localhost:8000/completion', options)
-      console.log(response)
+      // console.log(response)
       const data = await response.json()
       console.log(data)
+      const array = data.result.split('*')
+      console.log(array)
+      setLoader(false)
+      setResponse(array)
 
     }catch (err) {
       console.error(err)
@@ -57,35 +78,40 @@ const App = () => {
 
   return (
     <div className='app'>
-      <p>Prompt:</p>
-      <input type='text' value={prompt} onChange={(e) => setPrompt(e.target.value) }/>
-      <button onClick={() => getAllChamps()}>Send</button>
+      <Logo/>
+      <p>Champs:</p>
+      {/* <input type='text' value={prompt} onChange={(e) => setPrompt(e.target.value) }/> */}
       <p>{send}</p>
-      <ChampList champsObjofObjs={champs}/>
-    </div>
-  )
-}
+      {/* <ChampList champsObjofObjs={champs}/> */}
 
-const Champ = ({champ}) => {
-  return (
-    <div>
-      <span>{champ.name}</span>
-      <p>{champ.blurb}</p>
-      {champ.tags.forEach(element => <span>{element}</span>)}
-    </div>
-  )
-}
-
-const ChampList = ({champsObjofObjs}) => {
-    const elements = [];
-    for (const champ in champsObjofObjs) {
-      if (Object.prototype.hasOwnProperty.call(champsObjofObjs, champ)) {
-        const actualChamp = champsObjofObjs[champ];
-        elements.push(<Champ champ={actualChamp} key={actualChamp.id}/>);
+      <div style={{display:'flex', flexDirection:'row', marginBottom:'4rem'}}>
+        <div>
+          <span>My Champ</span>
+          <ChampPicker champsObjofObjs={champs} allChampsNames={allChampsNames} setLine={setLine1}/>
+        </div>
+        <span>
+          vs
+        </span>
+        <div>
+          <span>Enemy Champ</span>
+          <ChampPicker champsObjofObjs={champs} allChampsNames={allChampsNames} setLine={setLine2}/>
+        </div>
+      </div>
+      <button onClick={() => { 
+        setLoader(true)
+        sendPrompt()}}>Send</button>
+      {loader ? <Loader/> : 
+      <ul style={{listStyleType: 'none'}}>
+        {response.map((e) => <li key={e}> {e} </li>)}
+      </ul>
       }
-    }
-    return <div>{elements}</div>;
+    </div>
+  )
 }
+
+
+
+
 
 
 
